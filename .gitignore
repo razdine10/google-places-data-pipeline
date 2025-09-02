@@ -38,3 +38,4 @@ node_modules/
 # Zip artifacts
 lambda-package.zip
 
+orchestration/logs/
