@@ -293,9 +293,9 @@ def home_page():
     st.markdown("---")
     st.markdown("""
     <div style="text-align: center; color: #666; margin-top: 2rem;">
-    <p>🔗 <strong>Repository:</strong> <a href="#">GitHub - Restaurant Data Pipeline</a></p>
-    <p>👨🏿‍💻 <strong>Developed by:</strong> Said Razdine</p>
-    <p>📅 <strong>Last updated:</strong> """ + datetime.now().strftime("%m/%d/%Y") + """</p>
+    <p><strong>Repository:</strong> <a href="https://github.com/razdine10/google-places-data-pipeline" target="_blank">GitHub - Restaurant Data Pipeline</a></p>
+    <p><strong>Developed by:</strong> Said Razdine</p>
+    <p><strong>Last updated:</strong> """ + datetime.now().strftime("%m/%d/%Y") + """</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -516,9 +516,9 @@ def main():
     
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🔗 Useful Links")
-    st.sidebar.markdown("- [GitHub Repo](#)")
-    st.sidebar.markdown("- [Documentation](#)")
-    st.sidebar.markdown("- [API Status](#)")
+    st.sidebar.markdown("- [GitHub Repo](https://github.com/razdine10/google-places-data-pipeline)")
+    st.sidebar.markdown("- [Documentation](https://github.com/razdine10/google-places-data-pipeline#readme)")
+    st.sidebar.markdown("- [API Status](https://status.cloud.google.com/)")
     
     if page == "🏠 Home":
         home_page()
