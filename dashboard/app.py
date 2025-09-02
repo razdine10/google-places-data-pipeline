@@ -45,24 +45,45 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-def load_data():
-    """Load data from DuckDB"""
+def bootstrap_duckdb_if_missing(db_path: str) -> bool:
+    """Create a minimal DuckDB from dbt seed CSVs if DB is missing."""
     try:
-        project_root = "/Users/razdinesaid/Desktop/Google Places API Data Engineering Project"
-        db_path = os.path.join(project_root, 'reviewflow_dbt', 'reviewflow.duckdb')
-        
+        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        seeds_dir = os.path.join(repo_root, 'reviewflow_dbt', 'seeds')
+        restaurants_csv = os.path.join(seeds_dir, 'restaurants.csv')
+        reviews_csv = os.path.join(seeds_dir, 'reviews.csv')
+        if not (os.path.exists(restaurants_csv) and os.path.exists(reviews_csv)):
+            return False
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        conn = duckdb.connect(db_path)
+        conn.execute("DROP TABLE IF EXISTS restaurants")
+        conn.execute("CREATE TABLE restaurants AS SELECT * FROM read_csv_auto(?, header=True)", [restaurants_csv])
+        conn.execute("DROP TABLE IF EXISTS reviews")
+        conn.execute("CREATE TABLE reviews AS SELECT * FROM read_csv_auto(?, header=True)", [reviews_csv])
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+def load_data():
+    """Load data from DuckDB (bootstrap from seeds if missing)."""
+    try:
+        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        db_path = os.path.join(repo_root, 'reviewflow_dbt', 'reviewflow.duckdb')
+        if not os.path.exists(db_path):
+            bootstrap_duckdb_if_missing(db_path)
         if not os.path.exists(db_path):
             return None, None
-        
         conn = duckdb.connect(db_path)
-        
-        restaurants_df = conn.execute("SELECT * FROM mart_top_restaurants").df()
-        reviews_df = conn.execute("SELECT * FROM stg_reviews").df()
-        
+        restaurants_df = conn.execute("SELECT * FROM mart_top_restaurants").df() if 'mart_top_restaurants' in [r[0] for r in conn.execute("SHOW ALL TABLES").fetchall()] else None
+        if restaurants_df is None or restaurants_df.empty:
+            # Fallback to staging if mart not built
+            restaurants_df = conn.execute("SELECT * FROM restaurants").df()
+        reviews_df = conn.execute("SELECT * FROM stg_reviews").df() if 'stg_reviews' in [r[0] for r in conn.execute("SHOW ALL TABLES").fetchall()] else None
+        if reviews_df is None or reviews_df.empty:
+            reviews_df = conn.execute("SELECT * FROM reviews").df()
         conn.close()
-        
         return restaurants_df, reviews_df
-    
     except Exception as e:
         st.error(f"Error loading data: {str(e)}")
         return None, None
