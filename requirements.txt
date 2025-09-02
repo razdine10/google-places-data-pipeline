@@ -1,0 +1,15 @@
+# Dépendances pour le projet Yelp Data Engineering - Version Débutant
+# Installation : pip install -r requirements.txt
+
+# ===== ESSENTIELS =====
+requests==2.31.0          # Pour faire des requêtes à l'API Yelp
+pandas==2.1.4             # Pour manipuler les données (CSV, DataFrame)
+python-dotenv==1.0.0      # Pour gérer les variables d'environnement (.env)
+
+# ===== AWS =====
+boto3==1.34.0             # Pour uploader vers S3
+awscli==1.32.0            # Outils en ligne de commande AWS
+
+# ===== UTILITAIRES =====
+tqdm==4.66.1              # Barres de progression
+colorlog==6.8.0           # Logs colorés pour débugger 

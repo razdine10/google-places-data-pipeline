@@ -1,0 +1,10 @@
+reviewflow_dbt:
+  outputs:
+    dev:
+      type: duckdb
+      path: reviewflow.duckdb
+      schema: main
+      threads: 4
+      keepalives_idle: 0
+      search_path: main
+  target: dev 

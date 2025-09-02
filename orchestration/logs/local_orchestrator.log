@@ -1,0 +1,63 @@
+2025-09-02 18:59:19,246 - INFO - 🚀 Initialisation de l'orchestrateur local
+2025-09-02 18:59:19,246 - INFO - 🚀 DÉBUT DU PIPELINE LOCAL
+2025-09-02 18:59:19,246 - INFO - ============================================================
+2025-09-02 18:59:19,246 - INFO - 📥 ÉTAPE 1: Ingestion des données
+2025-09-02 18:59:19,246 - INFO - Lancement du collecteur Google Places...
+2025-09-02 18:59:26,800 - INFO - ✅ Collecte de données réussie
+2025-09-02 18:59:26,800 - INFO - 🔄 ÉTAPE 2: Transformations dbt
+2025-09-02 18:59:26,800 - INFO - Exécution: dbt deps
+2025-09-02 18:59:29,385 - INFO - Exécution: dbt run
+2025-09-02 18:59:32,375 - INFO - Exécution: dbt test
+2025-09-02 18:59:34,769 - ERROR - ❌ Erreur dans le pipeline: Échec dbt: Erreur dbt: Échec dbt test: 
+2025-09-02 18:59:34,769 - INFO - 📧 ÉTAPE 4: Notification
+2025-09-02 18:59:34,769 - INFO - Notification sauvegardée dans logs/notification_local_pipeline_20250902_185919.txt
+2025-09-02 19:01:04,065 - INFO - 🚀 Initialisation de l'orchestrateur local
+2025-09-02 19:01:04,065 - INFO - 🚀 DÉBUT DU PIPELINE LOCAL
+2025-09-02 19:01:04,065 - INFO - ============================================================
+2025-09-02 19:01:04,065 - INFO - 📥 ÉTAPE 1: Ingestion des données
+2025-09-02 19:01:04,065 - INFO - Lancement du collecteur Google Places...
+2025-09-02 19:01:09,231 - INFO - ✅ Collecte de données réussie
+2025-09-02 19:01:09,231 - INFO - 🔄 ÉTAPE 2: Transformations dbt
+2025-09-02 19:01:09,231 - INFO - Chargement des données CSV dans DuckDB...
+2025-09-02 19:01:09,558 - INFO - Exécution: dbt deps --profiles-dir .
+2025-09-02 19:01:12,127 - INFO - Exécution: dbt run --profiles-dir .
+2025-09-02 19:01:14,262 - INFO - Exécution: dbt test --profiles-dir .
+2025-09-02 19:01:16,648 - ERROR - ❌ Erreur dans le pipeline: Échec dbt: Erreur dbt: Échec dbt test --profiles-dir .: 
+2025-09-02 19:01:16,648 - INFO - 📧 ÉTAPE 4: Notification
+2025-09-02 19:01:16,649 - INFO - Notification sauvegardée dans logs/notification_local_pipeline_20250902_190104.txt
+2025-09-02 19:01:42,487 - INFO - 🚀 Initialisation de l'orchestrateur local
+2025-09-02 19:01:42,487 - INFO - 🚀 DÉBUT DU PIPELINE LOCAL
+2025-09-02 19:01:42,487 - INFO - ============================================================
+2025-09-02 19:01:42,487 - INFO - 📥 ÉTAPE 1: Ingestion des données
+2025-09-02 19:01:42,487 - INFO - Lancement du collecteur Google Places...
+2025-09-02 19:01:47,310 - INFO - ✅ Collecte de données réussie
+2025-09-02 19:01:47,310 - INFO - 🔄 ÉTAPE 2: Transformations dbt
+2025-09-02 19:01:47,310 - INFO - Chargement des données CSV dans DuckDB...
+2025-09-02 19:01:47,653 - INFO - Exécution: dbt deps --profiles-dir .
+2025-09-02 19:01:50,136 - INFO - Exécution: dbt run --profiles-dir .
+2025-09-02 19:01:52,946 - INFO - Exécution (optionnel): dbt test --profiles-dir .
+2025-09-02 19:01:55,367 - WARNING - ⚠️ Tests dbt échoués (non bloquant): 
+2025-09-02 19:01:55,367 - INFO - ✅ Transformations dbt réussies
+2025-09-02 19:01:55,367 - INFO - 🧪 ÉTAPE 3: Tests de qualité
+2025-09-02 19:01:55,367 - INFO - ✅ Tests de qualité réussis - 21 fichiers récents
+2025-09-02 19:01:55,367 - INFO - 📧 ÉTAPE 4: Notification
+2025-09-02 19:01:55,368 - INFO - Notification sauvegardée dans logs/notification_local_pipeline_20250902_190142.txt
+2025-09-02 19:01:55,368 - INFO - ✅ PIPELINE TERMINÉ AVEC SUCCÈS
+2025-09-02 19:25:47,400 - INFO - 🚀 Initialisation de l'orchestrateur local
+2025-09-02 19:25:47,400 - INFO - 🚀 DÉBUT DU PIPELINE LOCAL
+2025-09-02 19:25:47,400 - INFO - ============================================================
+2025-09-02 19:25:47,400 - INFO - 📥 ÉTAPE 1: Ingestion des données
+2025-09-02 19:25:47,400 - INFO - Lancement du collecteur Google Places...
+2025-09-02 19:25:54,574 - INFO - ✅ Collecte de données réussie
+2025-09-02 19:25:54,574 - INFO - 🔄 ÉTAPE 2: Transformations dbt
+2025-09-02 19:25:54,574 - INFO - Chargement des données CSV dans DuckDB...
+2025-09-02 19:25:54,967 - INFO - Exécution: dbt deps --profiles-dir .
+2025-09-02 19:25:57,697 - INFO - Exécution: dbt run --profiles-dir .
+2025-09-02 19:25:59,475 - INFO - Exécution (optionnel): dbt test --profiles-dir .
+2025-09-02 19:26:01,866 - WARNING - ⚠️ Tests dbt échoués (non bloquant): 
+2025-09-02 19:26:01,867 - INFO - ✅ Transformations dbt réussies
+2025-09-02 19:26:01,867 - INFO - 🧪 ÉTAPE 3: Tests de qualité
+2025-09-02 19:26:01,867 - INFO - ✅ Tests de qualité réussis - 24 fichiers récents
+2025-09-02 19:26:01,867 - INFO - 📧 ÉTAPE 4: Notification
+2025-09-02 19:26:01,867 - INFO - Notification sauvegardée dans logs/notification_local_pipeline_20250902_192547.txt
+2025-09-02 19:26:01,867 - INFO - ✅ PIPELINE TERMINÉ AVEC SUCCÈS

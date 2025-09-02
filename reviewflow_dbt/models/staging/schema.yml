@@ -1,0 +1,85 @@
+version: 2
+
+models:
+  - name: stg_restaurants
+    description: "Staging table for Google Places restaurants - cleaned and standardized"
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - place_id
+            - data_source
+    columns:
+      - name: place_id
+        description: "Unique identifier for the restaurant"
+        tests:
+          - not_null
+          - unique
+      - name: restaurant_name
+        description: "Name of the restaurant"
+        tests:
+          - not_null
+      - name: rating
+        description: "Average rating of the restaurant (0-5)"
+        tests:
+          - not_null
+      - name: total_reviews_count
+        description: "Total number of reviews"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: integer
+      - name: latitude
+        description: "Restaurant latitude"
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: -90
+              max_value: 90
+      - name: longitude
+        description: "Restaurant longitude"
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: -180
+              max_value: 180
+
+  - name: stg_reviews
+    description: "Staging table for Google Places reviews with sentiment analysis"
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - place_id
+            - author_name
+            - review_text
+            - review_timestamp
+    columns:
+      - name: place_id
+        description: "Foreign key to restaurant"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_restaurants')
+              field: place_id
+      - name: rating
+        description: "Review rating (1-5)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+              quote: false
+      - name: sentiment_category
+        description: "Sentiment category based on rating"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Excellent', 'Positive', 'Neutral', 'Negative', 'Very Negative']
+      - name: sentiment_simple
+        description: "Simplified sentiment classification"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Positive', 'Neutral', 'Negative']
+      - name: review_length
+        description: "Length of review text in characters"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: integer 

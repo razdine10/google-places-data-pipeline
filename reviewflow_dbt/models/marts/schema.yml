@@ -1,0 +1,59 @@
+version: 2
+
+models:
+  - name: mart_top_restaurants
+    description: "Final mart table for top restaurants with comprehensive metrics"
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - place_id
+    columns:
+      - name: place_id
+        description: "Unique identifier for the restaurant"
+        tests:
+          - not_null
+          - unique
+      - name: restaurant_name
+        description: "Name of the restaurant"
+        tests:
+          - not_null
+      - name: rating
+        description: "Average rating of the restaurant"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 5
+      - name: quality_score
+        description: "Composite quality score (0-100)"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+      - name: positive_sentiment_pct
+        description: "Percentage of positive sentiment reviews"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+      - name: negative_sentiment_pct
+        description: "Percentage of negative sentiment reviews"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+      - name: restaurant_tier
+        description: "Restaurant classification tier"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Premium', 'Excellent', 'Very Good', 'Good', 'Average']
+      - name: recommendation
+        description: "Business recommendation level"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Highly Recommended', 'Recommended', 'Average', 'Not Recommended'] 

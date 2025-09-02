@@ -1,0 +1,242 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Orchestration pipeline for restaurant data collection and transformation'
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: 'restaurant-pipeline'
+    Description: 'Project name'
+  
+  GooglePlacesApiKey:
+    Type: String
+    NoEcho: true
+    Description: 'Google Places API key'
+  
+  NotificationEmail:
+    Type: String
+    Description: 'Email for notifications'
+    Default: 'your-email@example.com'
+
+Resources:
+  # ==========================================
+  # IAM ROLES
+  # ==========================================
+  
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-lambda-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: LambdaExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                  - sns:Publish
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+
+  # ==========================================
+  # S3 BUCKET FOR DATA
+  # ==========================================
+  
+  DataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${ProjectName}-data-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # ==========================================
+  # SNS FOR NOTIFICATIONS
+  # ==========================================
+  
+  NotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ProjectName}-notifications'
+      DisplayName: 'Data Pipeline - Notifications'
+
+  NotificationSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      Endpoint: !Ref NotificationEmail
+      TopicArn: !Ref NotificationTopic
+
+  # ==========================================
+  # LAMBDA FUNCTIONS
+  # ==========================================
+  
+  # Data collection Lambda
+  DataCollectorLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-data-collector'
+      Runtime: python3.9
+      Handler: lambda_collector.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 900  # 15 minutes
+      MemorySize: 512
+      Environment:
+        Variables:
+          GOOGLE_PLACES_API_KEY: !Ref GooglePlacesApiKey
+          S3_BUCKET_NAME: !Ref DataBucket
+          SNS_TOPIC_ARN: !Ref NotificationTopic
+      Code:
+        ZipFile: |
+          # Code placeholder - replaced by deployment
+          def lambda_handler(event, context):
+              return {'statusCode': 200, 'body': 'Placeholder'}
+
+  # Main orchestrator Lambda
+  OrchestratorLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-orchestrator'
+      Runtime: python3.9
+      Handler: lambda_orchestrator.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 900  # 15 minutes
+      MemorySize: 1024
+      Environment:
+        Variables:
+          DATA_COLLECTOR_FUNCTION: !Ref DataCollectorLambda
+          S3_BUCKET_NAME: !Ref DataBucket
+          SNS_TOPIC_ARN: !Ref NotificationTopic
+      Code:
+        ZipFile: |
+          # Code placeholder - replaced by deployment
+          def lambda_handler(event, context):
+              return {'statusCode': 200, 'body': 'Placeholder'}
+
+  # ==========================================
+  # EVENTBRIDGE FOR SCHEDULING
+  # ==========================================
+  
+  # Rule to trigger the pipeline daily
+  DailyScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub '${ProjectName}-daily-schedule'
+      Description: 'Triggers the pipeline daily at 8 AM'
+      ScheduleExpression: 'cron(0 8 * * ? *)'  # Every day at 8 AM UTC
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt OrchestratorLambda.Arn
+          Id: 'DailyPipelineTrigger'
+          Input: |
+            {
+              "trigger_source": "scheduled",
+              "schedule_type": "daily"
+            }
+
+  # Permission for EventBridge to invoke Lambda
+  SchedulePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref OrchestratorLambda
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt DailyScheduleRule.Arn
+
+  # ==========================================
+  # CLOUDWATCH DASHBOARD
+  # ==========================================
+  
+  PipelineDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub '${ProjectName}-pipeline-dashboard'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/Lambda", "Invocations", "FunctionName", "${DataCollectorLambda}" ],
+                  [ ".", "Errors", ".", "." ],
+                  [ ".", "Duration", ".", "." ]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Data Collector Lambda - Metrics"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/Lambda", "Invocations", "FunctionName", "${OrchestratorLambda}" ],
+                  [ ".", "Errors", ".", "." ],
+                  [ ".", "Duration", ".", "." ]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Orchestrator Lambda - Metrics"
+              }
+            }
+          ]
+        }
+
+Outputs:
+  DataBucketName:
+    Description: 'Name of the S3 bucket for data'
+    Value: !Ref DataBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-DataBucket'
+
+  OrchestratorFunctionArn:
+    Description: 'ARN of the orchestrator Lambda function'
+    Value: !GetAtt OrchestratorLambda.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-OrchestratorArn'
+
+  CollectorFunctionArn:
+    Description: 'ARN of the data collector Lambda function'
+    Value: !GetAtt DataCollectorLambda.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-CollectorArn'
+
+  NotificationTopicArn:
+    Description: 'ARN of the SNS topic for notifications'
+    Value: !Ref NotificationTopic
+    Export:
+      Name: !Sub '${AWS::StackName}-NotificationTopic'
+
+  DashboardURL:
+    Description: 'URL of the CloudWatch dashboard'
+    Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${ProjectName}-pipeline-dashboard' 

@@ -1,0 +1,40 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+.env/
+.env.local
+
+# OS / editor junk
+.DS_Store
+.idea/
+.vscode/
+
+# Data and logs
+/data/
+/logs/
+*.duckdb
+*.db
+*.sqlite
+
+# Credentials
+config/.env
+
+# Python packaging
+build/
+dist/
+*.egg-info/
+
+# Streamlit cache
+.streamlit/
+
+# Node / front caches
+node_modules/
+
+# Zip artifacts
+lambda-package.zip
+
