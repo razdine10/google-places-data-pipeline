@@ -458,7 +458,14 @@ def dashboard_page():
     if 'rating' in filtered_df.columns:
         filtered_df = filtered_df[filtered_df['rating'] >= min_rating]
     
-    display_columns = ['restaurant_name', 'rating']
+    # Determine the correct name column depending on the source table
+    name_col = 'restaurant_name' if 'restaurant_name' in filtered_df.columns else ('name' if 'name' in filtered_df.columns else None)
+
+    display_columns = []
+    if name_col is not None:
+        display_columns.append(name_col)
+    if 'rating' in filtered_df.columns:
+        display_columns.append('rating')
     
     if 'quality_score' in filtered_df.columns:
         display_columns.append('quality_score')
@@ -469,16 +476,25 @@ def dashboard_page():
     if 'recommendation' in filtered_df.columns:
         display_columns.append('recommendation')
     
+    # Safe selection: only keep columns that actually exist
+    selected_columns = [c for c in display_columns if c in filtered_df.columns]
+    
+    # Build rename map only for present columns
     column_names = {
-        'restaurant_name': 'Restaurant',
+        (name_col if name_col is not None else 'restaurant_name'): 'Restaurant',
         'rating': 'Rating',
         'quality_score': 'Quality Score',
         'positive_sentiment_pct': 'Positive Sentiment (%)',
         'reviews_collected': 'Review Count',
         'recommendation': 'Recommendation'
     }
+    rename_map = {k: v for k, v in column_names.items() if k in selected_columns}
     
-    display_df = filtered_df[display_columns].rename(columns=column_names)
+    if len(selected_columns) == 0:
+        st.info("No displayable columns available in the current dataset.")
+        return
+    
+    display_df = filtered_df[selected_columns].rename(columns=rename_map)
     
     st.dataframe(
         display_df,
