@@ -311,6 +311,98 @@ def dashboard_page():
         st.info("💡 Execute: `python3 orchestration/local_orchestrator.py`")
         return
     
+    # Fallback enrichment when mart tables are unavailable
+    try:
+        needs_enrichment = any(col not in restaurants_df.columns for col in [
+            'quality_score', 'positive_sentiment_pct', 'reviews_collected', 'recommendation'
+        ])
+        if needs_enrichment and reviews_df is not None and not reviews_df.empty:
+            join_key = None
+            # Prefer joining on place_id when available
+            if 'place_id' in restaurants_df.columns and 'place_id' in reviews_df.columns:
+                join_key = 'place_id'
+            else:
+                # Fallback to restaurant name
+                name_col_r = 'restaurant_name' if 'restaurant_name' in restaurants_df.columns else (
+                    'name' if 'name' in restaurants_df.columns else None
+                )
+                name_col_v = 'restaurant_name' if 'restaurant_name' in reviews_df.columns else None
+                if name_col_r is not None and name_col_v is not None:
+                    restaurants_df = restaurants_df.copy()
+                    restaurants_df['__name_key__'] = restaurants_df[name_col_r]
+                    join_key = '__name_key__'
+            
+            if join_key is not None:
+                rv = reviews_df.copy()
+                # Determine positivity from rating (aligns with stg_reviews logic: rating >= 4 => Positive)
+                if 'rating' in rv.columns:
+                    rv['__is_positive__'] = rv['rating'] >= 4
+                else:
+                    rv['__is_positive__'] = False
+                
+                # Choose grouping key on reviews side
+                if join_key == 'place_id' and 'place_id' in rv.columns:
+                    group_key = 'place_id'
+                elif join_key == '__name_key__' and 'restaurant_name' in rv.columns:
+                    group_key = 'restaurant_name'
+                else:
+                    group_key = None
+                
+                if group_key is not None:
+                    agg = rv.groupby(group_key, dropna=False).agg(
+                        reviews_collected=('rating', lambda s: int(s.notna().sum() if hasattr(s, 'notna') else len(s))),
+                        positive_count=('__is_positive__', 'sum')
+                    ).reset_index()
+                    agg['positive_sentiment_pct'] = agg.apply(
+                        lambda row: round((row['positive_count'] * 100.0 / row['reviews_collected']), 1) if row['reviews_collected'] else 0.0,
+                        axis=1
+                    )
+                    agg = agg.drop(columns=['positive_count'])
+                    
+                    # Align key name for merge
+                    if join_key == '__name_key__' and group_key == 'restaurant_name':
+                        agg = agg.rename(columns={'restaurant_name': '__name_key__'})
+                    
+                    restaurants_df = restaurants_df.merge(agg, on=join_key, how='left')
+                    
+                    # Fill missing with zeros
+                    if 'reviews_collected' in restaurants_df.columns:
+                        restaurants_df['reviews_collected'] = restaurants_df['reviews_collected'].fillna(0).astype(int)
+                    else:
+                        restaurants_df['reviews_collected'] = 0
+                    if 'positive_sentiment_pct' in restaurants_df.columns:
+                        restaurants_df['positive_sentiment_pct'] = restaurants_df['positive_sentiment_pct'].fillna(0.0)
+                    else:
+                        restaurants_df['positive_sentiment_pct'] = 0.0
+                    
+                    # Compute quality score and labels
+                    if 'rating' in restaurants_df.columns:
+                        ps_series = restaurants_df['positive_sentiment_pct'] if 'positive_sentiment_pct' in restaurants_df.columns else pd.Series(0.0, index=restaurants_df.index)
+                        rc_series = restaurants_df['reviews_collected'] if 'reviews_collected' in restaurants_df.columns else pd.Series(0, index=restaurants_df.index)
+                        restaurants_df['quality_score'] = (
+                            (restaurants_df['rating'] * 15)
+                            + (np.minimum(ps_series / 4.0, 20))
+                            + (5 * (rc_series >= 5).astype(int))
+                        ).round(1)
+                        restaurants_df['restaurant_tier'] = np.where(
+                            (restaurants_df['rating'] >= 4.5) & (restaurants_df['positive_sentiment_pct'] >= 80), 'Premium',
+                            np.where((restaurants_df['rating'] >= 4.0) & (restaurants_df['positive_sentiment_pct'] >= 70), 'Excellent',
+                                     np.where((restaurants_df['rating'] >= 3.5) & (restaurants_df['positive_sentiment_pct'] >= 60), 'Very Good',
+                                              np.where(restaurants_df['rating'] >= 3.0, 'Good', 'Average')))
+                        )
+                        restaurants_df['recommendation'] = np.where(
+                            (restaurants_df['rating'] >= 4.0) & (restaurants_df['positive_sentiment_pct'] >= 75) & (restaurants_df['reviews_collected'] >= 3), 'Highly Recommended',
+                            np.where((restaurants_df['rating'] >= 3.5) & (restaurants_df['positive_sentiment_pct'] >= 60), 'Recommended',
+                                     np.where(restaurants_df['rating'] >= 3.0, 'Average', 'Not Recommended'))
+                        )
+            
+            # Cleanup temporary column
+            if '__name_key__' in restaurants_df.columns:
+                restaurants_df = restaurants_df.drop(columns=['__name_key__'])
+    except Exception:
+        # Silently skip enrichment on any unexpected error; UI will gracefully degrade to N/A
+        pass
+    
     st.markdown('<h2 class="sub-header">📈 Key Metrics</h2>', unsafe_allow_html=True)
     
     col1, col2, col3, col4, col5 = st.columns(5)
