@@ -438,19 +438,26 @@ def dashboard_page():
         st.markdown("### 🏆 Top 10 Restaurants")
         
         if 'quality_score' in restaurants_df.columns:
-            top_restaurants = restaurants_df.nlargest(10, 'quality_score')
-            
-            fig = px.bar(
-                top_restaurants,
-                x='quality_score',
-                y='restaurant_name',
-                orientation='h',
-                title="Top 10 by Quality Score",
-                color='rating',
-                color_continuous_scale='Viridis'
+            # Determine a safe name column for display
+            name_col_top = 'restaurant_name' if 'restaurant_name' in restaurants_df.columns else (
+                'name' if 'name' in restaurants_df.columns else None
             )
-            fig.update_layout(height=400, yaxis={'categoryorder': 'total ascending'})
-            st.plotly_chart(fig, use_container_width=True)
+            if name_col_top is None:
+                st.info("Restaurant name column not available")
+            else:
+                top_restaurants = restaurants_df.nlargest(10, 'quality_score')
+                bar_kwargs = dict(
+                    x='quality_score',
+                    y=name_col_top,
+                    orientation='h',
+                    title="Top 10 by Quality Score",
+                    color_continuous_scale='Viridis'
+                )
+                if 'rating' in top_restaurants.columns:
+                    bar_kwargs['color'] = 'rating'
+                fig = px.bar(top_restaurants, **bar_kwargs)
+                fig.update_layout(height=400, yaxis={'categoryorder': 'total ascending'})
+                st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("Quality score data not available")
     
